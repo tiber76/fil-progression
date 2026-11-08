@@ -1,0 +1,7 @@
+{
+  "name": "fil-progression",
+  "version": "0.1.0",
+  "description": "Jauge du Fil de progression au-dessus de la zone de saisie : un rond par étape, lu dans la liste d'étapes de Claude.",
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}

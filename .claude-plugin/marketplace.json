@@ -1,0 +1,11 @@
+{
+  "name": "fil-progression",
+  "owner": { "name": "Jeremy L" },
+  "plugins": [
+    {
+      "name": "fil-progression",
+      "source": "./",
+      "description": "Jauge du Fil de progression au-dessus de la zone de saisie : un rond par étape, lu dans la liste d'étapes de Claude."
+    }
+  ]
+}
