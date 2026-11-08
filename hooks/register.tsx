@@ -4,7 +4,8 @@ import type { Register } from 'claude-code'
 import type { Etape, Statut } from '../types'
 
 // Le Fil de progression, en bandeau : un rond par étape, lu dans la liste d'étapes que Claude tient déjà
-// (update_plan de l'app, TodoWrite du terminal). Rien à écrire dans le chat pour que la jauge reste juste.
+// (update_plan de l'app desktop ; TaskCreate, TaskUpdate et TodoWrite de Claude Code en terminal). Rien à
+// écrire dans le chat pour que la jauge reste juste.
 const CLE_MASQUE = 'masque'
 const COMMANDE = 'fil'
 const LARGEUR_NOM = 14
@@ -65,6 +66,31 @@ export function appliquer(courant: Etape[] | null, arguments_: ArgumentsPlan): E
   return etapes
 }
 
+type ArgumentsTache = { taskId?: unknown; status?: unknown; subject?: unknown }
+
+// TaskCreate : la tâche s'ajoute à la fin, en attente. Son numéro vient du résultat de l'outil.
+export function ajouterTache(courant: Etape[] | null, id: string, sujet: string): Etape[] {
+  const nouvelle: Etape = { id, nom: abreger(sujet), statut: 'pending' }
+  return [...(courant ?? []), nouvelle]
+}
+
+// TaskUpdate : le statut ou le titre d'une tâche connue ; « deleted » la retire. Tâche inconnue : rien ne change.
+export function majTache(courant: Etape[] | null, arguments_: ArgumentsTache): Etape[] | null {
+  if (!courant || typeof arguments_.taskId !== 'string') return courant
+  const rang = courant.findIndex(etape => etape.id === arguments_.taskId)
+  if (rang < 0) return courant
+  if (arguments_.status === 'deleted') return courant.filter((_, i) => i !== rang)
+  return courant.map((etape, i) =>
+    i !== rang
+      ? etape
+      : {
+          ...etape,
+          nom: typeof arguments_.subject === 'string' ? abreger(arguments_.subject) : etape.nom,
+          statut: arguments_.status === undefined ? etape.statut : versStatut(arguments_.status),
+        },
+  )
+}
+
 const estFini = (etapes: Etape[]) => etapes.every(etape => etape.statut === 'completed')
 
 export const register: Register = on => {
@@ -97,6 +123,27 @@ export const register: Register = on => {
     await update($, plan, courant => appliquer(courant, { items: e.todos })).catch(() => undefined)
 
     return next(e)
+  })
+
+  // Claude Code en terminal : une tâche par appel. Le numéro n'existe qu'une fois l'outil joué : on lit son résultat.
+  on('tool.call', { tool: 'TaskCreate' }, async ($, e, next) => {
+    const rendu = await next(e)
+    const tache = (rendu.result as { task?: { id?: unknown } } | undefined)?.task
+    if (rendu.deny === undefined && typeof tache?.id === 'string') {
+      const id = tache.id
+      await update($, plan, courant => ajouterTache(courant, id, String(e.subject ?? ''))).catch(() => undefined)
+    }
+
+    return rendu
+  })
+
+  on('tool.call', { tool: 'TaskUpdate' }, async ($, e, next) => {
+    const rendu = await next(e)
+    if (rendu.deny === undefined && rendu.isError !== true) {
+      await update($, plan, courant => majTache(courant, e as ArgumentsTache)).catch(() => undefined)
+    }
+
+    return rendu
   })
 
   // Le bilan de fin de tour coche toute la liste.

@@ -30,8 +30,9 @@ Pendant que Claude travaille sur une tâche en plusieurs étapes, tu vois d'un c
 
 Le mod ne demande rien à Claude et n'écrit rien dans le chat. Il lit la liste d'étapes que Claude tient déjà :
 
-- l'outil `update_plan` de l'app Claude Code (liste entière, « étape suivante », « étapes finies », « commence à ») ;
-- l'outil `TodoWrite` du terminal ;
+- l'outil `update_plan` de l'app Claude Code desktop (liste entière, « étape suivante », « étapes finies », « commence à ») ;
+- les outils `TaskCreate` et `TaskUpdate` de Claude Code en terminal : une tâche par étape, son numéro est lu dans le résultat de `TaskCreate` pour suivre ses mises à jour (statut, titre, suppression) ;
+- l'ancien outil `TodoWrite` ;
 - le bilan de fin de tour (`wrap_up`), qui coche toute la liste ;
 - l'outil `AskUserQuestion`, pour l'orange.
 
@@ -63,8 +64,9 @@ Puis **redémarre la session**.
 
 - Le rouge « bloqué » n'est pas déduit : seul l'orange l'est.
 - Le bandeau (`AbovePrompt`) n'existe que sur le terminal et l'app desktop, pas sur VS Code ni mobile.
-- La lecture de `TodoWrite` (terminal) réutilise la logique d'`update_plan`, mais je ne l'ai pas vue tourner en vrai : seul le chemin `update_plan` de l'app desktop a été regardé à l'écran.
-- La place de la jauge parmi d'autres mods dépend de l'ordre de chargement des mods.
+- **Vu en vrai, un seul chemin :** `update_plan` dans l'app desktop. `TaskCreate`, `TaskUpdate` et `TodoWrite` sont couverts par les tests du dépôt (le moteur y est simulé), pas par un essai dans un vrai terminal.
+- **Il faut une liste d'étapes.** Un Claude qui n'en tient pas (pas de consigne, pas d'outil de tâches) ne déclenche aucune jauge.
+- **Version de Claude Code :** testé sur la 2.1.317 seulement. La version minimale qui accepte les mods n'est pas connue.- La place de la jauge parmi d'autres mods dépend de l'ordre de chargement des mods.
 
 ## Développement
 
